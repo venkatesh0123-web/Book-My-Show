@@ -79,7 +79,7 @@ pipeline {
                 // Inject AWS credentials from Jenkins
                 withCredentials([[
                     $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'rajamouli'  // Change to your Jenkins AWS credentials ID
+                    credentialsId: 'aws-creds'  // Change to your Jenkins AWS credentials ID
                 ]]) {
                     sh '''
                     echo "Verifying AWS credentials..."
