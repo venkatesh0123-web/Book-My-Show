@@ -1,4 +1,4 @@
-// (with K8S Stage)
+// (with K8S Stage - Final Version)
 
 pipeline {
     agent any
@@ -41,14 +41,6 @@ pipeline {
             }
         }
 
-        stage('Quality Gate') {
-            steps {
-                script {
-                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token'
-                }
-            }
-        }
-
         stage('Install Dependencies') {
             steps {
                 sh '''
@@ -83,10 +75,9 @@ pipeline {
                 script {
                     withDockerRegistry(credentialsId: 'dockerhub-creds', toolName: 'docker') {
                         sh '''
-                        docker build -t venkateshvenky913/bms:latest -f bookmyshow-app/Dockerfile bookmyshow-app
-                        docker push venkateshvenky913/bms:latest
+                        docker build -t ${DOCKER_IMAGE} -f bookmyshow-app/Dockerfile bookmyshow-app
+                        docker push ${DOCKER_IMAGE}
                         '''
-
                     }
                 }
             }
@@ -100,14 +91,10 @@ pipeline {
                     aws sts get-caller-identity
 
                     echo "Configuring kubectl for EKS cluster..."
-                    aws eks update-kubeconfig --name mycluster --region ap-south-1
-
-                    echo "Verifying kubeconfig..."
-                    kubectl config view
+                    aws eks update-kubeconfig --name ${EKS_CLUSTER_NAME} --region ${AWS_REGION}
 
                     echo "Deploying application to EKS..."
                     kubectl apply -f deployment.yml
-                   
 
                     echo "Verifying deployment..."
                     kubectl get pods
@@ -116,17 +103,14 @@ pipeline {
                 }
             }
         }
-    }
 
-    post {
-        always {
-            emailext attachLog: true,
-                subject: "'${currentBuild.result}'",
-                body: "Project: ${env.JOB_NAME}<br/>" +
-                      "Build Number: ${env.BUILD_NUMBER}<br/>" +
-                      "URL: ${env.BUILD_URL}<br/>",
-                to: 'kastrokiran@gmail.com',
-                attachmentsPattern: 'trivyfs.txt'
+        stage('Quality Gate Verification') {
+            steps {
+                script {
+                    echo "Checking SonarQube Quality Gate..."
+                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token'
+                }
+            }
         }
     }
 }
