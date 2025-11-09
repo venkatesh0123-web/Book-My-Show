@@ -7,7 +7,6 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:
   rules:
-    - host:   # Replace with your domain or public DNS name
       http:
         paths:
           - path: /venky
